@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>双足球战术板 · 纵向阵型</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #0a1e2b;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .app {
+            max-width: 1400px;
+            width: 100%;
+            background: #0f2a3a;
+            border-radius: 32px;
+            padding: 24px 20px 20px;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.6), inset 0 1px 3px rgba(255,255,255,0.08);
+        }
+        h1 {
+            text-align: center;
+            font-weight: 500;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            color: #d4eaf7;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .board-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .team-panel {
+            flex: 1 1 440px;
+            background: #1a3a4b;
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 8px 18px rgba(0,0,0,0.4);
+        }
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 0 6px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .team-name-input {
+            background: #0e2a38;
+            border: 1px solid #2d5f78;
+            border-radius: 40px;
+            padding: 10px 18px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e3f2fd;
+            width: 130px;
+            text-align: center;
+            outline: none;
+            transition: 0.2s;
+        }
+        .team-name-input:focus {
+            border-color: #6ab0d6;
+            box-shadow: 0 0 0 3px rgba(106,176,214,0.3);
+        }
+        .formation-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0e2a38;
+            padding: 6px 12px;
+            border-radius: 40px;
+            border: 1px solid #2d5f78;
+        }
+        .formation-selector label {
+            color: #8bb9d0;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .formation-selector select {
+            background: #1f4a5e;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            border: 1px solid #3b7a99;
+            max-width: 110px;
+        }
+        .pitch-wrapper {
+            background: #1b5e3a;
+            border-radius: 20px;
+            padding: 12px;
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15), inset 0 0 30px rgba(0,0,0,0.5);
+            margin-bottom: 12px;
+        }
+        .pitch {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 10 / 16;
+            background: #1e7a45;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 8%, rgba(255,255,255,0.03) 8%, rgba(255,255,255,0.03) 16%),
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2);
+            border: 2px solid #e8f5e9;
+        }
+        .pitch::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 3px solid rgba(255,255,255,0.7);
+            border-radius: 12px;
+            pointer-events: none;
+        }
+        .center-line {
+            position: absolute;
+            top: 50%; left: 0;
+            width: 100%; height: 2px;
+            background: rgba(255,255,255,0.7);
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .center-circle {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 18%; aspect-ratio: 1/1;
+            border: 2px solid rgba(255,255,255,0.7);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .penalty-box-top, .penalty-box-bottom {
+            position: absolute;
+            left: 20%; width: 60%; height: 14%;
+            border: 2px solid rgba(255,255,255,0.7);
+            pointer-events: none;
+        }
+        .penalty-box-top { top: 0; border-top: none; }
+        .penalty-box-bottom { bottom: 0; border-bottom: none; }
+
+        /* 首发球员卡 */
+        .player-box {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            width: 84px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .player-box .pos-badge {
+            font-size: 9px;
+            color: #cfe8f7;
+            background: rgba(0,0,0,0.5);
+            padding: 1px 7px;
+            border-radius: 8px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .player-box input.name-input {
+            width: 84px;
+            background: #0d2a3a;
+            border: 2px solid #f0f9ff;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+            text-align: center;
+            padding: 5px 3px;
+            outline: none;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .player-box input.name-input::placeholder { color: #8fb3c8; font-weight: 400; }
+        .player-box input.name-input:focus {
+            border-color: #ffd966;
+            background: #1e4b63;
+            box-shadow: 0 0 0 3px rgba(255,217,102,0.4);
+            z-index: 30;
+            overflow: visible;
+            white-space: nowrap;
+        }
+        .player-box:hover input.name-input { overflow: visible; white-space: nowrap; }
+
+        /* 球员实力数值 */
+        .player-box input.rating-input {
+            width: 36px;
+            background: rgba(13,42,58,0.95);
+            border: 1px solid #2d5f78;
+            border-radius: 6px;
+            color: #ffd966;
+            font-weight: 700;
+            font-size: 11px;
+            text-align: center;
+            padding: 2px 0;
+            outline: none;
+            margin-top: 2px;
+        }
+        .player-box input.rating-input:focus {
+            border-color: #ffd966;
+            background: #1e4b63;
+            box-shadow: 0 0 0 2px rgba(255,217,102,0.4);
+            z-index: 30;
+        }
+        .player-box input.rating-input::-webkit-inner-spin-button,
+        .player-box input.rating-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .player-box input.rating-input { -moz-appearance: textfield; }
+
+        /* 替补席 & 教练 */
+        .bench-area {
+            background: #0e2a38;
+            border-radius: 18px;
+            padding: 12px 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #2d5f78;
+        }
+        .subs-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            flex: 2 1 200px;
+        }
+        .subs-list .sub-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #1f4a5e;
+            padding: 3px 6px;
+            border-radius: 8px;
+            border: 1px solid #3b7a99;
+        }
+        .subs-list .sub-item .sub-pos {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #cfe8f7;
+            background: rgba(0,0,0,0.35);
+            padding: 1px 4px;
+            border-radius: 4px;
+            min-width: 22px;
+            text-align: center;
+        }
+        .subs-list .sub-item input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-weight: 500;
+            font-size: 0.72rem;
+            width: 52px;
+            text-align: center;
+            outline: none;
+            border-bottom: 1px dashed #5f9db8;
+            padding: 2px 0;
+        }
+        .subs-list .sub-item input.sub-rating {
+            width: 28px;
+            font-weight: 700;
+            color: #ffd966;
+            border-bottom-color: #b08b4b;
+            text-align: center;
+        }
+        .subs-list .sub-item input::placeholder { color: #7d9eb0; font-weight: 300; }
+        .subs-list .sub-item input:focus { border-bottom-color: #ffd966; }
+        .subs-list .sub-item input.sub-rating:focus { border-bottom-color: #ffd966; }
+        .subs-list .sub-item select.sub-pos-sel {
+            background: rgba(0,0,0,0.35);
+            color: #cfe8f7;
+            border: none;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 3px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+        .coach-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #2a4a5e;
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid #b08b4b;
+            flex: 0 0 auto;
+        }
+        .coach-item label {
+            color: #e0c88b;
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+        .coach-item input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px dashed #b08b4b;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            width: 72px;
+            text-align: center;
+            outline: none;
+        }
+        .coach-item input:focus { border-bottom-color: #ffd966; }
+
+        /* 按钮 */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        .action-btn {
+            border: none;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .sim-btn {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255,107,53,0.4);
+            border: 2px solid #ff8c42;
+        }
+        .sim-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,107,53,0.6);
+        }
+        .reset-btn {
+            background: #1e4a5e;
+            color: #b0d4e8;
+            border: 1px solid #3b7a99;
+        }
+        .reset-btn:hover { background: #2c6a82; color: white; }
+
+        /* 推演结果面板 */
+        .result-panel {
+            background: #1a3a4b;
+            border-radius: 24px;
+            padding: 20px;
+            margin-top: 16px;
+            border: 2px solid #2d5f78;
+            display: none;
+        }
+        .result-panel.show { display: block; }
+        .result-scoreboard {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #0e2a38;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .result-team { text-align: center; flex: 1; }
+        .result-team-name { font-size: 0.9rem; color: #8bb9d0; margin-bottom: 4px; }
+        .result-score { font-size: 2.2rem; font-weight: 800; color: #ffd966; }
+        .result-vs { font-size: 1.2rem; color: #5f9db8; font-weight: 700; padding: 0 12px; }
+        .result-xg { font-size: 0.7rem; color: #7d9eb0; margin-top: 2px; }
+        .result-section-title {
+            font-size: 0.85rem;
+            color: #d4eaf7;
+            font-weight: 700;
+            margin: 14px 0 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #2d5f78;
+        }
+        .prob-bars { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+        .prob-row { display: flex; align-items: center; gap: 8px; }
+        .prob-label { font-size: 0.72rem; color: #8bb9d0; width: 70px; }
+        .prob-track { flex: 1; height: 10px; background: #0e2a38; border-radius: 5px; overflow: hidden; }
+        .prob-fill { height: 100%; border-radius: 5px; transition: width 0.5s; }
+        .prob-value { font-size: 0.75rem; font-weight: 700; color: #ffd966; width: 42px; text-align: right; }
+        .stat-bar-container { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+        .stat-bar-label { font-size: 0.7rem; color: #8bb9d0; width: 40px; text-align: center; flex-shrink: 0; }
+        .stat-bar-track { flex: 1; height: 8px; background: #0e2a38; border-radius: 4px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+        .stat-bar-fill.home { background: linear-gradient(90deg, #4facfe, #00f2fe); }
+        .stat-bar-fill.away { background: linear-gradient(90deg, #f093fb, #f5576c); }
+        .stat-bar-pct { font-size: 0.72rem; color: #d4eaf7; width: 30px; flex-shrink: 0; }
+        .timeline { max-height: 280px; overflow-y: auto; background: #0e2a38; border-radius: 12px; padding: 10px; }
+        .timeline-item { display: flex; align-items: center; padding: 5px 8px; border-radius: 6px; margin-bottom: 3px; font-size: 0.78rem; }
+        .timeline-item:nth-child(even) { background: rgba(255,255,255,0.03); }
+        .timeline-time { font-weight: 700; color: #ffd966; width: 42px; flex-shrink: 0; }
+        .timeline-icon { width: 20px; text-align: center; margin-right: 6px; flex-shrink: 0; }
+        .timeline-text { color: #cfe8f7; flex: 1; }
+        .timeline-item.goal { background: rgba(255,217,102,0.12); }
+        .prediction-text { background: #0e2a38; border-radius: 12px; padding: 12px 14px; color: #cfe8f7; font-size: 0.8rem; line-height: 1.7; }
+        .prediction-text b { color: #ffd966; }
+
+        /* ===== 球员身体资料（身高 / 体重 / 惯用脚） ===== */
+        .player-box .meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            margin-top: 2px;
+        }
+        .player-box .phys-chip {
+            font-size: 8px;
+            line-height: 1.3;
+            color: #a9dcf2;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(106,176,214,0.35);
+            border-radius: 6px;
+            padding: 1px 4px;
+            max-width: 44px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .player-box .phys-chip:hover { border-color: #ffd966; color: #ffe9a8; }
+        .player-box .phys-chip.empty { color: #7d9eb0; border-style: dashed; font-style: italic; }
+
+        .icon-btn {
+            background: #1f4a5e;
+            color: #cfe8f7;
+            border: 1px solid #3b7a99;
+            border-radius: 40px;
+            padding: 7px 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .icon-btn:hover { background: #2c6a82; color: #fff; border-color: #6ab0d6; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(3,12,18,0.75);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 100;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #123346;
+            border: 1px solid #2d5f78;
+            border-radius: 20px;
+            width: min(780px, 100%);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 30px 70px rgba(0,0,0,0.65);
+        }
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid #2d5f78;
+        }
+        .modal-head h2 { font-size: 1rem; color: #d4eaf7; font-weight: 600; letter-spacing: 1px; }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #8bb9d0;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .modal-close:hover { background: #1f4a5e; color: #fff; }
+        .modal-tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 18px 0; }
+        .btn-sm {
+            background: #1f4a5e;
+            color: #d4eaf7;
+            border: 1px solid #3b7a99;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-sm:hover { background: #2c6a82; color: #fff; }
+        .btn-sm.primary {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-color: #ff8c42;
+            color: #fff;
+        }
+        .btn-sm.primary:hover { filter: brightness(1.08); }
+        .import-msg { padding: 8px 18px 0; font-size: 0.72rem; color: #9fd3ea; min-height: 18px; }
+        .import-msg.err { color: #ff9d9d; }
+        .paste-area { padding: 10px 18px 0; display: flex; flex-direction: column; gap: 8px; }
+        .paste-area[hidden] { display: none; }
+        .paste-area textarea {
+            width: 100%;
+            height: 96px;
+            background: #0e2a38;
+            border: 1px solid #2d5f78;
+            border-radius: 8px;
+            color: #d4eaf7;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            padding: 8px 10px;
+            outline: none;
+            resize: vertical;
+            font-family: ui-monospace, Consolas, monospace;
+        }
+        .paste-area textarea:focus { border-color: #6ab0d6; }
+        .phys-legend { font-size: 0.68rem; color: #7d9eb0; padding: 6px 18px 4px; line-height: 1.6; }
+        .modal-body { overflow: auto; padding: 6px 18px 18px; }
+        table.profile-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; color: #cfe8f7; }
+        table.profile-table th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #0e2a38;
+            color: #8bb9d0;
+            font-weight: 600;
+            text-align: left;
+            padding: 7px 6px;
+            border-bottom: 1px solid #2d5f78;
+            font-size: 0.7rem;
+        }
+        table.profile-table td { padding: 4px 6px; border-bottom: 1px solid rgba(45,95,120,0.35); }
+        table.profile-table tr.subrow td { background: rgba(0,0,0,0.12); }
+        table.profile-table tr:hover td { background: rgba(106,176,214,0.08); }
+        .profile-table input {
+            width: 72px;
+            background: #0e2a38;
+            border: 1px solid #2d5f78;
+            border-radius: 6px;
+            color: #fff;
+            padding: 5px 6px;
+            font-size: 0.72rem;
+            outline: none;
+            text-align: center;
+        }
+        .profile-table input:focus { border-color: #ffd966; background: #1e4b63; }
+        .profile-table input::-webkit-inner-spin-button,
+        .profile-table input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .profile-table select {
+            background: #0e2a38;
+            border: 1px solid #2d5f78;
+            border-radius: 6px;
+            color: #fff;
+            padding: 5px 6px;
+            font-size: 0.72rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .tag {
+            display: inline-block;
+            font-size: 0.62rem;
+            padding: 1px 6px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.4);
+            color: #cfe8f7;
+            font-weight: 700;
+        }
+        .phys-cards { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+        .phys-card {
+            flex: 1 1 240px;
+            background: #0e2a38;
+            border-radius: 12px;
+            padding: 10px 12px;
+            border: 1px solid rgba(45,95,120,0.6);
+        }
+        .phys-card h4 {
+            font-size: 0.75rem;
+            color: #8bb9d0;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .phys-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 0.74rem;
+            color: #cfe8f7;
+            padding: 2px 0;
+        }
+        .phys-row b { color: #ffd966; font-weight: 700; }
+
+        @media (max-width: 600px) {
+            .player-box { width: 70px; }
+            .player-box input.name-input { width: 70px; font-size: 10px; padding: 4px 1px; }
+            .player-box input.rating-input { width: 32px; font-size: 10px; }
+            .player-box .phys-chip { max-width: 30px; font-size: 7px; padding: 1px 2px; }
+            .player-box .pos-badge { font-size: 8px; }
+            .team-name-input { width: 100px; font-size: 0.95rem; padding: 8px 10px; }
+            .formation-selector label { display: none; }
+            .formation-selector select { max-width: 90px; font-size: 0.75rem; }
+            .bench-area { flex-direction: column; align-items: stretch; }
+            .subs-list .sub-item input { width: 44px; font-size: 0.68rem; }
+            .subs-list .sub-item input.sub-rating { width: 26px; }
+            .subs-list .sub-item .sub-pos { font-size: 0.6rem; min-width: 20px; }
+            .result-score { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <h1>⚽ 双足球战术板 · AI比赛推演</h1>
+    <div class="board-container">
+
+        <div class="team-panel" id="teamLeft">
+            <div class="team-header">
+                <input type="text" class="team-name-input" id="teamNameLeft" value="主队" placeholder="队名">
+                <div class="formation-selector">
+                    <label>阵型</label>
+                    <select id="formationLeft"></select>
+                </div>
+                <button class="icon-btn" id="profileBtnLeft" title="录入身高 / 体重 / 惯用脚">👤 球员资料</button>
+            </div>
+            <div class="pitch-wrapper">
+                <div class="pitch" id="pitchLeft">
+                    <div class="center-line"></div>
+                    <div class="center-circle"></div>
+                    <div class="penalty-box-top"></div>
+                    <div class="penalty-box-bottom"></div>
+                </div>
+            </div>
+            <div class="bench-area">
+                <div class="subs-list" id="subsLeft"></div>
+                <div class="coach-item">
+                    <label>教练</label>
+                    <input type="text" id="coachLeft" value="教练" placeholder="姓名">
+                </div>
+            </div>
+        </div>
+
+        <div class="team-panel" id="teamRight">
+            <div class="team-header">
+                <input type="text" class="team-name-input" id="teamNameRight" value="客队" placeholder="队名">
+                <div class="formation-selector">
+                    <label>阵型</label>
+                    <select id="formationRight"></select>
+                </div>
+                <button class="icon-btn" id="profileBtnRight" title="录入身高 / 体重 / 惯用脚">👤 球员资料</button>
+            </div>
+            <div class="pitch-wrapper">
+                <div class="pitch" id="pitchRight">
+                    <div class="center-line"></div>
+                    <div class="center-circle"></div>
+                    <div class="penalty-box-top"></div>
+                    <div class="penalty-box-bottom"></div>
+                </div>
+            </div>
+            <div class="bench-area">
+                <div class="subs-list" id="subsRight"></div>
+                <div class="coach-item">
+                    <label>教练</label>
+                    <input type="text" id="coachRight" value="教练" placeholder="姓名">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="btn-row">
+        <button class="action-btn sim-btn" id="simBtn">🎮 AI 比赛推演</button>
+        <button class="action-btn reset-btn" id="resetBtn">重置阵容</button>
+    </div>
+
+    <div class="result-panel" id="resultPanel">
+        <div class="result-scoreboard">
+            <div class="result-team">
+                <div class="result-team-name" id="resTeamNameLeft">主队</div>
+                <div class="result-score" id="resScoreLeft">0</div>
+                <div class="result-xg" id="resXgLeft">xG: 0.00</div>
+            </div>
+            <div class="result-vs">VS</div>
+            <div class="result-team">
+                <div class="result-team-name" id="resTeamNameRight">客队</div>
+                <div class="result-score" id="resScoreRight">0</div>
+                <div class="result-xg" id="resXgRight">xG: 0.00</div>
+            </div>
+        </div>
+        <div class="result-section-title">📊 赛前概率预测（蒙特卡洛 10000 次模拟）</div>
+        <div class="prob-bars" id="probBars"></div>
+        <div class="result-section-title">📈 比赛数据对比</div>
+        <div id="resultStats"></div>
+        <div class="result-section-title">🧬 身体条件对比（身高 / 体重 / 惯用脚）</div>
+        <div id="physCompare"></div>
+        <div class="result-section-title">🎬 比赛时间线</div>
+        <div class="timeline" id="timeline"></div>
+        <div class="result-section-title">🤖 AI 赛后分析</div>
+        <div class="prediction-text" id="predictionText"></div>
+    </div>
+</div>
+
+<!-- 球员身体资料录入弹窗 -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal">
+            <div class="modal-head">
+                <h2 id="profileModalTitle">球员身体资料</h2>
+                <button class="modal-close" id="profileClose" title="关闭">✕</button>
+            </div>
+            <div class="modal-tools">
+                <button class="btn-sm primary" id="uploadCsvBtn">📤 上传 CSV 文件</button>
+                <button class="btn-sm" id="downloadTplBtn">⬇ 下载模板</button>
+                <button class="btn-sm" id="pasteToggleBtn">📋 粘贴导入</button>
+                <button class="btn-sm" id="demoBtn">✨ 填入示例数据</button>
+                <button class="btn-sm" id="clearPhysBtn">🧹 清空本队身体数据</button>
+            </div>
+            <div class="import-msg" id="importMsg"></div>
+            <div class="paste-area" id="pasteArea" hidden>
+                <textarea id="pasteText" placeholder="每行一名球员，用逗号或制表符分隔（可直接从 Excel 复制）：&#10;姓名,身高(cm),体重(kg),惯用脚(左/右/双)&#10;例：张三,183,78,右&#10;也可以用序号代替姓名：1,183,78,右"></textarea>
+                <button class="btn-sm primary" id="pasteConfirmBtn">导入粘贴内容</button>
+            </div>
+            <div class="phys-legend">
+                CSV 列顺序：<b>姓名, 身高(cm), 体重(kg), 惯用脚(左/右/双)</b>；姓名需与场上球员名一致，也可用序号 1–23。
+                数据只保存在本机浏览器（localStorage），刷新不丢失。
+            </div>
+            <div class="modal-body">
+                <table class="profile-table">
+                    <thead>
+                    <tr>
+                        <th style="width:56px;">位置</th>
+                        <th>姓名</th>
+                        <th style="width:96px;">身高(cm)</th>
+                        <th style="width:96px;">体重(kg)</th>
+                        <th style="width:92px;">惯用脚</th>
+                    </tr>
+                    </thead>
+                    <tbody id="profileBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="csvFileInput" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden>
+
+<script>
+(function() {
+    'use strict';
+
+    // ==================== 阵型坐标 ====================
+    // 纵向球场，y 从上到下，主队门将在顶部
+    // 规则：中路球员平行（同排 y 相同），边路球员 y 比中路更靠前（主队 y 更大）
+    // x 间距拉大避免横向重叠，名字框 84px 能完整显示
+    const FORMATIONS = {
+        '4-4-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'LM',  x: 15, y: 50 }, { pos: 'CM', x: 38, y: 44 },
+            { pos: 'CM',  x: 62, y: 44 }, { pos: 'RM', x: 85, y: 50 },
+            { pos: 'ST',  x: 35, y: 73 }, { pos: 'ST', x: 65, y: 73 }
+        ],
+        '4-3-3': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CM',  x: 28, y: 45 }, { pos: 'CM', x: 50, y: 45 },
+            { pos: 'CM',  x: 72, y: 45 },
+            { pos: 'LW',  x: 16, y: 76 }, { pos: 'ST', x: 50, y: 70 },
+            { pos: 'RW',  x: 84, y: 76 }
+        ],
+        '4-2-3-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CDM', x: 35, y: 38 }, { pos: 'CDM', x: 65, y: 38 },
+            { pos: 'LM',  x: 15, y: 58 }, { pos: 'CAM', x: 50, y: 52 },
+            { pos: 'RM',  x: 85, y: 58 },
+            { pos: 'ST',  x: 50, y: 78 }
+        ],
+        '3-5-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'CB',  x: 28, y: 21 }, { pos: 'CB', x: 50, y: 21 },
+            { pos: 'CB',  x: 72, y: 21 },
+            { pos: 'LWB', x: 10, y: 48 }, { pos: 'CM', x: 30, y: 42 },
+            { pos: 'CM',  x: 50, y: 42 }, { pos: 'CM', x: 70, y: 42 },
+            { pos: 'RWB', x: 90, y: 48 },
+            { pos: 'ST',  x: 35, y: 73 }, { pos: 'ST', x: 65, y: 73 }
+        ],
+        '3-4-3': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'CB',  x: 28, y: 21 }, { pos: 'CB', x: 50, y: 21 },
+            { pos: 'CB',  x: 72, y: 21 },
+            { pos: 'LM',  x: 15, y: 49 }, { pos: 'CM', x: 38, y: 43 },
+            { pos: 'CM',  x: 62, y: 43 }, { pos: 'RM', x: 85, y: 49 },
+            { pos: 'LW',  x: 16, y: 76 }, { pos: 'ST', x: 50, y: 70 },
+            { pos: 'RW',  x: 84, y: 76 }
+        ],
+        '5-3-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LWB', x: 10, y: 27 }, { pos: 'CB', x: 30, y: 21 },
+            { pos: 'CB',  x: 50, y: 21 }, { pos: 'CB', x: 70, y: 21 },
+            { pos: 'RWB', x: 90, y: 27 },
+            { pos: 'CM',  x: 28, y: 45 }, { pos: 'CM', x: 50, y: 45 },
+            { pos: 'CM',  x: 72, y: 45 },
+            { pos: 'ST',  x: 35, y: 73 }, { pos: 'ST', x: 65, y: 73 }
+        ],
+        '4-1-4-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CDM', x: 50, y: 37 },
+            { pos: 'LM',  x: 15, y: 56 }, { pos: 'CM', x: 36, y: 51 },
+            { pos: 'CM',  x: 64, y: 51 }, { pos: 'RM', x: 85, y: 56 },
+            { pos: 'ST',  x: 50, y: 79 }
+        ],
+        '4-4-1-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'LM',  x: 15, y: 50 }, { pos: 'CM', x: 38, y: 44 },
+            { pos: 'CM',  x: 62, y: 44 }, { pos: 'RM', x: 85, y: 50 },
+            { pos: 'CAM', x: 50, y: 64 },
+            { pos: 'ST',  x: 50, y: 80 }
+        ],
+        '4-2-2-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CDM', x: 35, y: 39 }, { pos: 'CDM', x: 65, y: 39 },
+            { pos: 'CAM', x: 28, y: 56 }, { pos: 'CAM', x: 72, y: 56 },
+            { pos: 'ST',  x: 35, y: 76 }, { pos: 'ST', x: 65, y: 76 }
+        ],
+        '4-3-2-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CDM', x: 28, y: 42 }, { pos: 'CDM', x: 50, y: 42 },
+            { pos: 'CDM', x: 72, y: 42 },
+            { pos: 'CAM', x: 35, y: 60 }, { pos: 'CAM', x: 65, y: 60 },
+            { pos: 'ST',  x: 50, y: 80 }
+        ],
+        '3-4-2-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'CB',  x: 28, y: 21 }, { pos: 'CB', x: 50, y: 21 },
+            { pos: 'CB',  x: 72, y: 21 },
+            { pos: 'LM',  x: 15, y: 49 }, { pos: 'CM', x: 38, y: 43 },
+            { pos: 'CM',  x: 62, y: 43 }, { pos: 'RM', x: 85, y: 49 },
+            { pos: 'CAM', x: 35, y: 64 }, { pos: 'CAM', x: 65, y: 64 },
+            { pos: 'ST',  x: 50, y: 80 }
+        ],
+        '4-1-2-1-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CDM', x: 50, y: 36 },
+            { pos: 'CM',  x: 30, y: 50 }, { pos: 'CM', x: 70, y: 50 },
+            { pos: 'CAM', x: 50, y: 63 },
+            { pos: 'ST',  x: 35, y: 78 }, { pos: 'ST', x: 65, y: 78 }
+        ],
+        '4-1-3-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CDM', x: 50, y: 36 },
+            { pos: 'LM',  x: 18, y: 52 }, { pos: 'CM', x: 50, y: 52 },
+            { pos: 'RM',  x: 82, y: 52 },
+            { pos: 'ST',  x: 35, y: 76 }, { pos: 'ST', x: 65, y: 76 }
+        ],
+        '4-5-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'LM',  x: 12, y: 46 }, { pos: 'CM', x: 30, y: 43 },
+            { pos: 'CM',  x: 50, y: 43 }, { pos: 'CM', x: 70, y: 43 },
+            { pos: 'RM',  x: 88, y: 46 },
+            { pos: 'ST',  x: 50, y: 77 }
+        ],
+        '3-6-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'CB',  x: 28, y: 21 }, { pos: 'CB', x: 50, y: 21 },
+            { pos: 'CB',  x: 72, y: 21 },
+            { pos: 'LWB', x: 9,  y: 45 }, { pos: 'LM', x: 26, y: 41 },
+            { pos: 'CM',  x: 42, y: 41 }, { pos: 'CM', x: 58, y: 41 },
+            { pos: 'RM',  x: 74, y: 41 }, { pos: 'RWB', x: 91, y: 45 },
+            { pos: 'ST',  x: 50, y: 76 }
+        ],
+        '5-4-1': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LWB', x: 10, y: 27 }, { pos: 'CB', x: 30, y: 21 },
+            { pos: 'CB',  x: 50, y: 21 }, { pos: 'CB', x: 70, y: 21 },
+            { pos: 'RWB', x: 90, y: 27 },
+            { pos: 'LM',  x: 15, y: 47 }, { pos: 'CM', x: 38, y: 43 },
+            { pos: 'CM',  x: 62, y: 43 }, { pos: 'RM', x: 85, y: 47 },
+            { pos: 'ST',  x: 50, y: 77 }
+        ],
+        '5-2-3': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LWB', x: 10, y: 27 }, { pos: 'CB', x: 30, y: 21 },
+            { pos: 'CB',  x: 50, y: 21 }, { pos: 'CB', x: 70, y: 21 },
+            { pos: 'RWB', x: 90, y: 27 },
+            { pos: 'CDM', x: 35, y: 45 }, { pos: 'CDM', x: 65, y: 45 },
+            { pos: 'LW',  x: 16, y: 76 }, { pos: 'ST', x: 50, y: 70 },
+            { pos: 'RW',  x: 84, y: 76 }
+        ],
+        '3-1-4-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'CB',  x: 28, y: 21 }, { pos: 'CB', x: 50, y: 21 },
+            { pos: 'CB',  x: 72, y: 21 },
+            { pos: 'CDM', x: 50, y: 37 },
+            { pos: 'LM',  x: 15, y: 52 }, { pos: 'CM', x: 36, y: 47 },
+            { pos: 'CM',  x: 64, y: 47 }, { pos: 'RM', x: 85, y: 52 },
+            { pos: 'ST',  x: 35, y: 76 }, { pos: 'ST', x: 65, y: 76 }
+        ],
+        '4-2-1-3': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CDM', x: 35, y: 40 }, { pos: 'CDM', x: 65, y: 40 },
+            { pos: 'CAM', x: 50, y: 56 },
+            { pos: 'LW',  x: 16, y: 77 }, { pos: 'ST', x: 50, y: 73 },
+            { pos: 'RW',  x: 84, y: 77 }
+        ],
+        '4-3-1-2': [
+            { pos: 'GK',  x: 50, y: 7 },
+            { pos: 'LB',  x: 15, y: 27 }, { pos: 'CB', x: 38, y: 21 },
+            { pos: 'CB',  x: 62, y: 21 }, { pos: 'RB', x: 85, y: 27 },
+            { pos: 'CM',  x: 28, y: 45 }, { pos: 'CM', x: 50, y: 45 },
+            { pos: 'CM',  x: 72, y: 45 },
+            { pos: 'CAM', x: 50, y: 63 },
+            { pos: 'ST',  x: 35, y: 79 }, { pos: 'ST', x: 65, y: 79 }
+        ]
+    };
+
+    const DEFAULT_NAMES = {
+        'GK':'门将','LB':'左后卫','CB':'中后卫','RB':'右后卫',
+        'LWB':'左翼卫','RWB':'右翼卫','CDM':'后腰','CM':'中场',
+        'CAM':'前腰','LM':'左前卫','RM':'右前卫',
+        'LW':'左边锋','RW':'右边锋','ST':'前锋'
+    };
+
+    const FORMATION_LIST = Object.keys(FORMATIONS);
+
+    // 存储球员名字 & 实力数值
+    const playerNames = new Map();
+    const playerRatings = new Map();
+
+    // 球员身体资料：身高(cm) / 体重(kg) / 惯用脚(L=左脚, R=右脚, B=双脚)
+    // key：首发 `p-${side}-${idx}`，替补 `s-${side}-${i}`
+    const playerProfiles = new Map();
+    const FOOT_LABEL = { L: '左', R: '右', B: '双', '': '—' };
+
+    // 位置默认实力值
+    const DEFAULT_RATING = {
+        'GK': 82, 'CB': 78, 'LB': 77, 'RB': 77, 'LWB': 76, 'RWB': 76,
+        'CDM': 78, 'CM': 80, 'CAM': 82, 'LM': 78, 'RM': 78,
+        'LW': 82, 'RW': 82, 'ST': 83
+    };
+
+    // ==================== 身体资料：工具函数 ====================
+    function starterKey(side, idx) { return `p-${side}-${idx}`; }
+    function subKey(side, i) { return `s-${side}-${i}`; }
+
+    function getProfile(key) {
+        if (!playerProfiles.has(key)) {
+            playerProfiles.set(key, { height: '', weight: '', foot: '' });
+        }
+        return playerProfiles.get(key);
+    }
+
+    function profileChipText(key) {
+        const p = getProfile(key);
+        if (!p.height && !p.foot) return '＋资料';
+        return [p.height || '', p.foot ? FOOT_LABEL[p.foot] : ''].filter(Boolean).join('/');
+    }
+
+    function profileSummary(key) {
+        const p = getProfile(key);
+        const bits = [];
+        if (p.height) bits.push(`身高 ${p.height} cm`);
+        if (p.weight) bits.push(`体重 ${p.weight} kg`);
+        if (p.foot) bits.push(`惯用脚 ${FOOT_LABEL[p.foot]}脚`);
+        return bits.length ? bits.join(' · ') + '（点击编辑）' : '未录入身体资料，点击添加';
+    }
+
+    function refreshChip(key) {
+        document.querySelectorAll(`[data-phys-key="${key}"]`).forEach(el => {
+            el.textContent = profileChipText(key);
+            el.title = profileSummary(key);
+            const p = getProfile(key);
+            el.classList.toggle('empty', !p.height && !p.weight && !p.foot);
+        });
+    }
+
+    const clampNum = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+    // 统计首发 11 人的身体条件（未录入时全部返回中性值，不改变原结果）
+    function calcTeamPhys(side, posList) {
+        const heights = [], weights = [];
+        let left = 0, right = 0, both = 0, inverted = 0;
+        for (let i = 0; i < 11; i++) {
+            const p = getProfile(starterKey(side, i));
+            const h = parseFloat(p.height);
+            const w = parseFloat(p.weight);
+            if (h >= 120 && h <= 230) heights.push(h);
+            if (w >= 35 && w <= 160) weights.push(w);
+            if (p.foot === 'L') left++;
+            else if (p.foot === 'R') right++;
+            else if (p.foot === 'B') both++;
+
+            const pos = posList[i];
+            if ((pos === 'LW' || pos === 'LM') && p.foot === 'R') inverted++;
+            if ((pos === 'RW' || pos === 'RM') && p.foot === 'L') inverted++;
+        }
+        const avgH = heights.length ? heights.reduce((a, b) => a + b, 0) / heights.length : null;
+        const avgW = weights.length ? weights.reduce((a, b) => a + b, 0) / weights.length : null;
+        const bmi = (avgH && avgW) ? avgW / Math.pow(avgH / 100, 2) : null;
+        return {
+            avgH, avgW, bmi, left, right, both, inverted,
+            count: heights.length,
+            footKnown: left + right + both,
+            // 归一化到 [-1, 1]：每高 10 cm 记 1 个单位；BMI 每高 3.5 记 1 个单位
+            aerial: avgH ? clampNum((avgH - 180) / 10, -1, 1) : 0,
+            duel: bmi ? clampNum((bmi - 23) / 3.5, -1, 1) : 0
+        };
+    }
+
+    // 初始化
+    function populateFormations() {
+        ['Left', 'Right'].forEach(side => {
+            const sel = document.getElementById('formation' + side);
+            FORMATION_LIST.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                sel.appendChild(opt);
+            });
+            sel.value = '4-4-2';
+        });
+    }
+
+    function initDefaultNames() {
+        playerNames.clear();
+        playerRatings.clear();
+        ['left', 'right'].forEach(side => {
+            FORMATIONS['4-4-2'].forEach((p, idx) => {
+                const key = `${side}-4-4-2-${idx}`;
+                const base = DEFAULT_NAMES[p.pos] || p.pos;
+                playerNames.set(key, `${base}${idx+1}`);
+                playerRatings.set(key, DEFAULT_RATING[p.pos] || 78);
+            });
+        });
+    }
+
+    // 渲染首发球员
+    function renderPlayers(side) {
+        const pitch = document.getElementById(`pitch${side === 'left' ? 'Left' : 'Right'}`);
+        // 切换阵型时，先把当前输入框里的名字读回 Map（按当前位置顺序）
+        const oldBoxes = pitch.querySelectorAll('.player-box');
+        const oldNames = [];
+        oldBoxes.forEach(box => {
+            const inp = box.querySelector('.name-input');
+            if (inp) oldNames.push(inp.value);
+        });
+        oldBoxes.forEach(n => n.remove());
+
+        const formation = document.getElementById(`formation${side === 'left' ? 'Left' : 'Right'}`).value;
+        const positions = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+
+        positions.forEach((pos, idx) => {
+            // 优先复用旧名字（按位置标签匹配），其次用默认名
+            const oldName = oldNames[idx];
+            const key = `${side}-${formation}-${idx}`;
+            let name = playerNames.get(key);
+            if (name === undefined) {
+                if (oldName && oldName.trim() && !oldName.startsWith('替补')) {
+                    name = oldName;
+                } else {
+                    const base = DEFAULT_NAMES[pos.pos] || pos.pos;
+                    name = `${base}${idx+1}`;
+                }
+                playerNames.set(key, name);
+            }
+
+            let yPercent = pos.y;
+            if (side === 'right') yPercent = 100 - pos.y;
+
+            const box = document.createElement('div');
+            box.className = 'player-box';
+            box.style.left = pos.x + '%';
+            box.style.top = yPercent + '%';
+
+            const badge = document.createElement('span');
+            badge.className = 'pos-badge';
+            badge.textContent = pos.pos;
+            box.appendChild(badge);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'name-input';
+            input.maxLength = 12;
+            input.value = name;
+            input.dataset.key = key;
+            input.addEventListener('input', function() {
+                playerNames.set(this.dataset.key, this.value);
+            });
+            input.addEventListener('focus', function() { this.select(); });
+            input.addEventListener('click', e => e.stopPropagation());
+            box.appendChild(input);
+
+            // 实力数值输入框
+            const ratingKey = `${side}-${formation}-${idx}`;
+            let rating = playerRatings.get(ratingKey);
+            if (rating === undefined) {
+                rating = DEFAULT_RATING[pos.pos] || 78;
+                playerRatings.set(ratingKey, rating);
+            }
+            const ratingInput = document.createElement('input');
+            ratingInput.type = 'number';
+            ratingInput.className = 'rating-input';
+            ratingInput.min = '1';
+            ratingInput.max = '99';
+            ratingInput.value = rating;
+            ratingInput.dataset.key = ratingKey;
+            ratingInput.title = '实力评分 (1-99)';
+            ratingInput.addEventListener('input', function() {
+                let val = parseInt(this.value, 10);
+                if (isNaN(val)) val = 78;
+                val = Math.max(1, Math.min(99, val));
+                playerRatings.set(this.dataset.key, val);
+            });
+            ratingInput.addEventListener('change', function() {
+                if (this.value === '' || parseInt(this.value, 10) < 1) this.value = 78;
+                let val = parseInt(this.value, 10);
+                val = Math.max(1, Math.min(99, val));
+                this.value = val;
+                playerRatings.set(this.dataset.key, val);
+            });
+            ratingInput.addEventListener('click', e => e.stopPropagation());
+
+            // 评分 + 身体资料（身高/惯用脚）小徽标
+            const metaRow = document.createElement('div');
+            metaRow.className = 'meta-row';
+            metaRow.appendChild(ratingInput);
+
+            const chipKey = starterKey(side, idx);
+            const chip = document.createElement('span');
+            chip.className = 'phys-chip';
+            chip.dataset.physKey = chipKey;
+            chip.textContent = profileChipText(chipKey);
+            chip.title = profileSummary(chipKey);
+            chip.addEventListener('click', e => {
+                e.stopPropagation();
+                openProfileModal(side, chipKey);
+            });
+            if (!getProfile(chipKey).height && !getProfile(chipKey).weight && !getProfile(chipKey).foot) {
+                chip.classList.add('empty');
+            }
+            metaRow.appendChild(chip);
+            box.appendChild(metaRow);
+
+            pitch.appendChild(box);
+        });
+    }
+
+    // 替补位置选项
+    const SUB_POSITIONS = ['GK','CB','LB','RB','LWB','RWB','CDM','CM','CAM','LM','RM','LW','RW','ST'];
+
+    // 替补默认位置（按序分配，尽量覆盖各位置）
+    function defaultSubPos(i) {
+        const order = ['GK','CB','CB','LB','RB','CDM','CM','CM','LM','RM','ST','ST'];
+        return order[i] || 'CM';
+    }
+
+    // 存储替补数据: key = `${side}-sub-${i}`，value = { name, pos, rating }
+    const subData = new Map();
+
+    function getSubKey(side, i) { return `${side}-sub-${i}`; }
+
+    function getSubData(side, i) {
+        const key = getSubKey(side, i);
+        if (!subData.has(key)) {
+            const pos = defaultSubPos(i);
+            const baseRatings = { 'GK':80,'CB':76,'LB':75,'RB':75,'LWB':74,'RWB':74,'CDM':76,'CM':77,'CAM':78,'LM':75,'RM':75,'LW':78,'RW':78,'ST':78 };
+            subData.set(key, { name: `替补${i+1}`, pos: pos, rating: baseRatings[pos] || 76 });
+        }
+        return subData.get(key);
+    }
+
+    // 渲染替补（12人）
+    function renderSubs(side) {
+        const container = document.getElementById(`subs${side === 'left' ? 'Left' : 'Right'}`);
+        container.innerHTML = '';
+        for (let i = 0; i < 12; i++) {
+            const data = getSubData(side, i);
+            const item = document.createElement('div');
+            item.className = 'sub-item';
+
+            // 位置选择器
+            const posSel = document.createElement('select');
+            posSel.className = 'sub-pos-sel';
+            SUB_POSITIONS.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                if (p === data.pos) opt.selected = true;
+                posSel.appendChild(opt);
+            });
+            posSel.addEventListener('change', () => {
+                const d = getSubData(side, i);
+                d.pos = posSel.value;
+            });
+            item.appendChild(posSel);
+
+            // 名字输入框
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.className = 'sub-name';
+            nameInput.placeholder = `替补${i+1}`;
+            nameInput.value = data.name;
+            nameInput.title = data.name;
+            nameInput.addEventListener('input', () => {
+                const d = getSubData(side, i);
+                d.name = nameInput.value;
+                nameInput.title = nameInput.value;
+            });
+            nameInput.addEventListener('blur', () => {
+                if (nameInput.value.trim() === '') {
+                    const d = getSubData(side, i);
+                    d.name = `替补${i+1}`;
+                    nameInput.value = d.name;
+                    nameInput.title = d.name;
+                }
+            });
+            nameInput.addEventListener('focus', () => nameInput.select());
+            nameInput.addEventListener('click', e => e.stopPropagation());
+            item.appendChild(nameInput);
+
+            // 数值输入框
+            const ratingInput = document.createElement('input');
+            ratingInput.type = 'number';
+            ratingInput.className = 'sub-rating';
+            ratingInput.min = '1';
+            ratingInput.max = '99';
+            ratingInput.value = data.rating;
+            ratingInput.title = '实力评分';
+            ratingInput.addEventListener('input', () => {
+                let v = parseInt(ratingInput.value) || 1;
+                v = Math.max(1, Math.min(99, v));
+                const d = getSubData(side, i);
+                d.rating = v;
+            });
+            ratingInput.addEventListener('click', e => e.stopPropagation());
+            item.appendChild(ratingInput);
+
+            container.appendChild(item);
+        }
+    }
+
+    // ==================== 球员身体资料弹窗 / 导入导出 ====================
+    let modalSide = 'left';
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function teamNameOf(side) {
+        const el = document.getElementById(`teamName${side === 'left' ? 'Left' : 'Right'}`);
+        return (el && el.value) || (side === 'left' ? '主队' : '客队');
+    }
+
+    // 当前球队名单（11 首发 + 12 替补），顺序与 CSV 序号一致
+    function rosterEntries(side) {
+        const formation = document.getElementById(`formation${side === 'left' ? 'Left' : 'Right'}`).value;
+        const positions = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+        const list = positions.map((p, idx) => ({
+            key: starterKey(side, idx),
+            pos: p.pos,
+            name: playerNames.get(`${side}-${formation}-${idx}`) || DEFAULT_NAMES[p.pos] || p.pos,
+            kind: '首发'
+        }));
+        for (let i = 0; i < 12; i++) {
+            const d = getSubData(side, i);
+            list.push({ key: subKey(side, i), pos: d.pos, name: d.name, kind: '替补' });
+        }
+        return list;
+    }
+
+    function showMsg(text, isErr) {
+        const msg = document.getElementById('importMsg');
+        if (!msg) return;
+        msg.className = 'import-msg' + (isErr ? ' err' : '');
+        msg.textContent = text;
+    }
+
+    function openProfileModal(side, focusKey) {
+        modalSide = side;
+        document.getElementById('profileModalTitle').textContent = `${teamNameOf(side)} · 球员身体资料`;
+        document.getElementById('pasteArea').hidden = true;
+        showMsg('');
+        buildProfileTable();
+        document.getElementById('profileModal').classList.add('show');
+        if (focusKey) {
+            const row = document.querySelector(`[data-row-key="${focusKey}"]`);
+            const inp = row && row.querySelector('input');
+            if (inp) setTimeout(() => inp.focus(), 40);
+        }
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').classList.remove('show');
+    }
+
+    function buildProfileTable() {
+        const tbody = document.getElementById('profileBody');
+        tbody.innerHTML = '';
+        rosterEntries(modalSide).forEach(entry => {
+            const p = getProfile(entry.key);
+            const tr = document.createElement('tr');
+            tr.dataset.rowKey = entry.key;
+            if (entry.kind === '替补') tr.classList.add('subrow');
+
+            const tdPos = document.createElement('td');
+            tdPos.innerHTML = `<span class="tag">${entry.pos}</span>`;
+
+            const tdName = document.createElement('td');
+            tdName.innerHTML = `${escapeHtml(entry.name)}<span style="font-size:.62rem;color:#7d9eb0;margin-left:6px">${entry.kind}</span>`;
+
+            const tdH = document.createElement('td');
+            const hIn = document.createElement('input');
+            hIn.type = 'number';
+            hIn.min = '120';
+            hIn.max = '230';
+            hIn.placeholder = '如 183';
+            hIn.value = p.height || '';
+            hIn.addEventListener('input', () => {
+                const v = parseFloat(hIn.value);
+                p.height = (!isNaN(v) && v >= 120 && v <= 230) ? String(Math.round(v)) : '';
+                refreshChip(entry.key);
+            });
+            tdH.appendChild(hIn);
+
+            const tdW = document.createElement('td');
+            const wIn = document.createElement('input');
+            wIn.type = 'number';
+            wIn.min = '35';
+            wIn.max = '160';
+            wIn.placeholder = '如 78';
+            wIn.value = p.weight || '';
+            wIn.addEventListener('input', () => {
+                const v = parseFloat(wIn.value);
+                p.weight = (!isNaN(v) && v >= 35 && v <= 160) ? String(Math.round(v)) : '';
+                refreshChip(entry.key);
+            });
+            tdW.appendChild(wIn);
+
+            const tdF = document.createElement('td');
+            const sel = document.createElement('select');
+            [['', '—'], ['L', '左脚'], ['R', '右脚'], ['B', '双脚']].forEach(([v, t]) => {
+                const o = document.createElement('option');
+                o.value = v;
+                o.textContent = t;
+                if ((p.foot || '') === v) o.selected = true;
+                sel.appendChild(o);
+            });
+            sel.addEventListener('change', () => {
+                p.foot = sel.value;
+                refreshChip(entry.key);
+            });
+            tdF.appendChild(sel);
+
+            tr.append(tdPos, tdName, tdH, tdW, tdF);
+            tbody.appendChild(tr);
+        });
+    }
+
+    function parseFoot(v) {
+        const s = String(v || '').trim().toLowerCase();
+        if (!s || s === '-' || s === '—') return '';
+        if (['左', '左脚', '左足', 'l', 'left'].includes(s)) return 'L';
+        if (['右', '右脚', '右足', 'r', 'right'].includes(s)) return 'R';
+        if (['双', '双脚', '左右', '两', 'b', 'both'].includes(s)) return 'B';
+        return null;
+    }
+
+    function parseDelimited(text) {
+        return String(text).replace(/^\uFEFF/, '').split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(line => line.length)
+            .map(line => line.split(/[,\t;]/).map(c => c.trim()));
+    }
+
+    function importTable(rows) {
+        const entries = rosterEntries(modalSide);
+        const byName = new Map();
+        entries.forEach(e => byName.set(e.name.trim().toLowerCase(), e));
+
+        let ok = 0;
+        const missing = [];
+        rows.forEach(row => {
+            if (!row || !row.length) return;
+            const first = (row[0] || '').trim();
+            if (!first) return;
+            if (/^(姓名|名字|球员|name)$/i.test(first)) return; // 跳过表头
+
+            let target = byName.get(first.toLowerCase()) || null;
+            if (!target && /^\d+$/.test(first)) {
+                const idx = parseInt(first, 10) - 1;
+                if (idx >= 0 && idx < entries.length) target = entries[idx];
+            }
+            if (!target) { missing.push(first); return; }
+
+            const p = getProfile(target.key);
+            const h = parseFloat(row[1]);
+            const w = parseFloat(row[2]);
+            const f = parseFoot(row[3]);
+            if (!isNaN(h) && h >= 120 && h <= 230) p.height = String(Math.round(h));
+            if (!isNaN(w) && w >= 35 && w <= 160) p.weight = String(Math.round(w));
+            if (f !== null) p.foot = f;
+            ok++;
+            refreshChip(target.key);
+        });
+
+        buildProfileTable();
+        if (ok === 0) {
+            showMsg('没有匹配到任何球员：请确认姓名与名单一致，或第一列改用序号 1–23。', true);
+        } else {
+            showMsg(`已导入 ${ok} 名球员的身体资料` +
+                (missing.length ? `；未匹配 ${missing.length} 人（${missing.slice(0, 4).join('、')}${missing.length > 4 ? '…' : ''}）` : '。'));
+        }
+    }
+
+    // Excel 另存的 CSV 常为 GBK，UTF-8 解出乱码时自动回退
+    function readTextFile(file, cb) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const buf = reader.result;
+            let text = new TextDecoder('utf-8').decode(buf);
+            if (text.indexOf('\uFFFD') !== -1) {
+                try { text = new TextDecoder('gbk').decode(buf); } catch (e) { /* 忽略 */ }
+            }
+            cb(text);
+        };
+        reader.onerror = () => showMsg('文件读取失败，请重试。', true);
+        reader.readAsArrayBuffer(file);
+    }
+
+    function downloadTemplate() {
+        const rows = [['姓名', '身高(cm)', '体重(kg)', '惯用脚(左/右/双)']];
+        rosterEntries(modalSide).forEach(e => {
+            const p = getProfile(e.key);
+            rows.push([e.name, p.height || '', p.weight || '', p.foot ? FOOT_LABEL[p.foot] : '']);
+        });
+        const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${teamNameOf(modalSide)}-球员资料.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        showMsg('模板已下载，用 Excel 打开填写后另存为 CSV 再上传即可。');
+    }
+
+    function fillDemo() {
+        rosterEntries(modalSide).forEach(e => {
+            const p = getProfile(e.key);
+            const hBase = e.pos === 'GK' ? 190
+                : (e.pos === 'CB' || e.pos === 'ST') ? 186
+                : (e.pos === 'LW' || e.pos === 'RW' || e.pos === 'CAM' || e.pos === 'LM' || e.pos === 'RM') ? 177
+                : 181;
+            const h = hBase + Math.round((Math.random() - 0.5) * 8);
+            p.height = String(h);
+            p.weight = String(Math.round((h - 100) * (0.94 + Math.random() * 0.14)));
+            p.foot = Math.random() < 0.26 ? 'L' : (Math.random() < 0.06 ? 'B' : 'R');
+            refreshChip(e.key);
+        });
+        buildProfileTable();
+        showMsg('已按位置生成示例身体数据，可直接在表格里修改。');
+    }
+
+    // ==================== 本地保存（刷新不丢数据） ====================
+    const STORE_KEY = 'football_tactics_board_v2';
+    let saveTimer = null;
+
+    function scheduleSave() {
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveState, 400);
+    }
+
+    function saveState() {
+        try {
+            const data = {
+                v: 2,
+                names: Array.from(playerNames),
+                ratings: Array.from(playerRatings),
+                profiles: Array.from(playerProfiles),
+                subs: Array.from(subData),
+                teamLeft: document.getElementById('teamNameLeft').value,
+                teamRight: document.getElementById('teamNameRight').value,
+                coachLeft: document.getElementById('coachLeft').value,
+                coachRight: document.getElementById('coachRight').value,
+                formationLeft: document.getElementById('formationLeft').value,
+                formationRight: document.getElementById('formationRight').value
+            };
+            localStorage.setItem(STORE_KEY, JSON.stringify(data));
+        } catch (e) { /* file:// 或隐私模式下可能不可用，忽略 */ }
+    }
+
+    function loadState() {
+        let data = null;
+        try { data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { return false; }
+        if (!data) return false;
+        try {
+            playerNames.clear();
+            playerRatings.clear();
+            playerProfiles.clear();
+            subData.clear();
+            (data.names || []).forEach(([k, v]) => playerNames.set(k, v));
+            (data.ratings || []).forEach(([k, v]) => playerRatings.set(k, v));
+            (data.profiles || []).forEach(([k, v]) => playerProfiles.set(k, v));
+            (data.subs || []).forEach(([k, v]) => subData.set(k, v));
+            if (data.formationLeft) document.getElementById('formationLeft').value = data.formationLeft;
+            if (data.formationRight) document.getElementById('formationRight').value = data.formationRight;
+            document.getElementById('teamNameLeft').value = data.teamLeft || '主队';
+            document.getElementById('teamNameRight').value = data.teamRight || '客队';
+            document.getElementById('coachLeft').value = data.coachLeft || '教练';
+            document.getElementById('coachRight').value = data.coachRight || '教练';
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function initTeam(side) {
+        const sel = document.getElementById(`formation${side === 'left' ? 'Left' : 'Right'}`);
+        const handler = () => renderPlayers(side);
+        sel.addEventListener('change', handler);
+        sel.addEventListener('click', handler);
+        renderPlayers(side);
+    }
+
+    // ==================== AI 比赛推演引擎 ====================
+
+    function poissonSample(lambda) {
+        if (lambda <= 0) return 0;
+        const L = Math.exp(-lambda);
+        let k = 0, p = 1;
+        do { k++; p *= Math.random(); } while (p > L);
+        return k - 1;
+    }
+
+    // 获取球队数据（基于球员名字推断实力，无数值输入）
+    function getTeamData(side) {
+        const formation = document.getElementById(`formation${side === 'left' ? 'Left' : 'Right'}`).value;
+        const positions = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+        const names = positions.map((p, idx) => {
+            const key = `${side}-${formation}-${idx}`;
+            return playerNames.get(key) || DEFAULT_NAMES[p.pos] || p.pos;
+        });
+        const posList = positions.map(p => p.pos);
+
+        // 读取用户设置的球员实力数值
+        let ratings = names.map((name, i) => {
+            const key = `${side}-${formation}-${i}`;
+            const customRating = playerRatings.get(key);
+            if (customRating !== undefined && customRating >= 1 && customRating <= 99) {
+                return customRating;
+            }
+            // 降级方案：基于位置默认分 + 名字微调
+            const pos = posList[i];
+            const posBase = { 'GK': 82, 'CB': 78, 'LB': 77, 'RB': 77, 'LWB': 76, 'RWB': 76,
+                              'CDM': 78, 'CM': 80, 'CAM': 82, 'LM': 78, 'RM': 78,
+                              'LW': 82, 'RW': 82, 'ST': 83 };
+            let base = posBase[pos] || 78;
+            const nameBonus = Math.min(8, Math.max(0, name.length - 2) * 2);
+            return Math.max(60, Math.min(95, base + nameBonus));
+        });
+
+        // 分组
+        let gk = [], def = [], mid = [], att = [];
+        posList.forEach((pos, i) => {
+            const r = ratings[i];
+            if (pos === 'GK') gk.push(r);
+            else if (['CB','LB','RB','LWB','RWB'].includes(pos)) def.push(r);
+            else if (['CDM','CM','CAM','LM','RM'].includes(pos)) mid.push(r);
+            else att.push(r);
+        });
+
+        const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 72;
+        const teamName = document.getElementById(`teamName${side === 'left' ? 'Left' : 'Right'}`).value || (side==='left'?'主队':'客队');
+
+        // 替补平均实力（读取替补席真实数值）
+        let subRatings = [];
+        for (let i = 0; i < 12; i++) {
+            const d = getSubData(side, i);
+            subRatings.push(d.rating);
+        }
+        const subAvg = subRatings.length ? subRatings.reduce((a,b)=>a+b,0)/subRatings.length : 70;
+
+        const formationStyle = getFormationStyle(formation);
+        const phys = calcTeamPhys(side, posList);
+
+        return {
+            name: teamName,
+            side: side,
+            formation: formation,
+            phys: phys,
+            gk: avg(gk),
+            def: avg(def),
+            mid: avg(mid),
+            att: avg(att),
+            overall: (avg(gk)*2 + avg(def)*3 + avg(mid)*3 + avg(att)*2) / 10,
+            subAvg: subAvg,
+            style: formationStyle,
+            ratings: ratings,
+            names: names,
+            posList: posList
+        };
+    }
+
+    function getFormationStyle(formation) {
+        const styles = {
+            '4-4-2': { attack: 1.0, def: 1.0 },
+            '4-3-3': { attack: 1.15, def: 0.9 },
+            '4-2-3-1': { attack: 1.1, def: 1.05 },
+            '3-5-2': { attack: 1.1, def: 1.0 },
+            '3-4-3': { attack: 1.2, def: 0.85 },
+            '5-3-2': { attack: 0.85, def: 1.2 },
+            '4-1-4-1': { attack: 0.95, def: 1.1 },
+            '4-4-1-1': { attack: 1.05, def: 0.95 },
+            '4-2-2-2': { attack: 1.1, def: 0.95 },
+            '4-3-2-1': { attack: 1.0, def: 1.05 },
+            '3-4-2-1': { attack: 1.15, def: 0.9 },
+            '4-1-2-1-2': { attack: 1.05, def: 1.0 },
+            '4-1-3-2': { attack: 1.0, def: 1.0 },
+            '4-5-1': { attack: 0.85, def: 1.15 },
+            '3-6-1': { attack: 0.8, def: 1.2 },
+            '5-4-1': { attack: 0.75, def: 1.25 },
+            '5-2-3': { attack: 1.15, def: 1.05 },
+            '3-1-4-2': { attack: 0.95, def: 1.05 },
+            '4-2-1-3': { attack: 1.2, def: 0.85 },
+            '4-3-1-2': { attack: 1.1, def: 0.95 }
+        };
+        return styles[formation] || { attack: 1.0, def: 1.0 };
+    }
+
+    function calculateXG(home, away) {
+        const baseXG = 1.35;
+        const homeAttack = home.att * home.style.attack * (1 + (home.mid - 72) / 200);
+        const awayDefense = away.def * away.style.def * (1 + (away.gk - 72) / 300);
+        const awayAttack = away.att * away.style.attack * (1 + (away.mid - 72) / 200);
+        const homeDefense = home.def * home.style.def * (1 + (home.gk - 72) / 300);
+        const homeAdvantage = 1.12;
+        const homeSubBonus = 1 + (home.subAvg - 70) / 400;
+        const awaySubBonus = 1 + (away.subAvg - 70) / 400;
+
+        let homeXG = baseXG * (homeAttack / awayDefense) * homeAdvantage * homeSubBonus;
+        let awayXG = baseXG * (awayAttack / homeDefense) * awaySubBonus;
+
+        // —— 身体条件修正：身高→空中对抗，BMI→身体对抗，逆足边锋→内切威胁 ——
+        // 未录入资料时各项均为 0，结果与原来完全一致
+        const aerialEdge = clampNum(home.phys.aerial - away.phys.aerial, -1.5, 1.5);
+        const duelEdge = clampNum(home.phys.duel - away.phys.duel, -1.5, 1.5);
+        const footHome = clampNum(home.phys.inverted / 2, 0, 1);
+        const footAway = clampNum(away.phys.inverted / 2, 0, 1);
+        const homePhysFactor = 1 + 0.06 * aerialEdge + 0.05 * duelEdge + 0.03 * footHome;
+        const awayPhysFactor = 1 - 0.06 * aerialEdge - 0.05 * duelEdge + 0.03 * footAway;
+        homeXG *= homePhysFactor;
+        awayXG *= awayPhysFactor;
+
+        homeXG = Math.max(0.2, Math.min(4.5, homeXG));
+        awayXG = Math.max(0.2, Math.min(4.5, awayXG));
+        return { home: homeXG, away: awayXG };
+    }
+
+    function simulateMatch(home, away) {
+        const xg = calculateXG(home, away);
+        const homeGoals = poissonSample(xg.home);
+        const awayGoals = poissonSample(xg.away);
+        const events = generateEvents(home, away, homeGoals, awayGoals);
+        const stats = calculateStats(home, away, xg);
+        return { homeGoals, awayGoals, homeXG: xg.home, awayXG: xg.away, events, stats };
+    }
+
+    function generateEvents(home, away, hGoals, aGoals) {
+        const events = [];
+        const allPlayers = [];
+        home.names.forEach((name, i) => allPlayers.push({ name, pos: home.posList[i], side: 'home', rating: home.ratings[i] }));
+        away.names.forEach((name, i) => allPlayers.push({ name, pos: away.posList[i], side: 'away', rating: away.ratings[i] }));
+
+        const allGoals = [];
+        for (let i = 0; i < hGoals; i++) {
+            const scorers = home.names.map((name, idx) => ({
+                name, weight: getScorerWeight(home.posList[idx], home.ratings[idx])
+            }));
+            const scorer = weightedRandom(scorers);
+            const minute = randomMinute('goal', allGoals);
+            allGoals.push({ minute, team: 'home', player: scorer.name });
+        }
+        for (let i = 0; i < aGoals; i++) {
+            const scorers = away.names.map((name, idx) => ({
+                name, weight: getScorerWeight(away.posList[idx], away.ratings[idx])
+            }));
+            const scorer = weightedRandom(scorers);
+            const minute = randomMinute('goal', allGoals);
+            allGoals.push({ minute, team: 'away', player: scorer.name });
+        }
+
+        const yellowCount = poissonSample(3.2);
+        for (let i = 0; i < yellowCount; i++) {
+            const p = allPlayers[Math.floor(Math.random() * allPlayers.length)];
+            const minute = randomMinute('yellow', allGoals);
+            events.push({ minute, team: p.side, player: p.name, type: 'yellow', text: `${p.name} 犯规，黄牌警告` });
+        }
+
+        if (Math.random() < 0.18) {
+            const p = allPlayers[Math.floor(Math.random() * allPlayers.length)];
+            const minute = randomMinute('red', allGoals);
+            events.push({ minute, team: p.side, player: p.name, type: 'red', text: `${p.name} 严重犯规，红牌罚下！` });
+        }
+
+        const subCount = Math.min(5, 2 + Math.floor(Math.random() * 3));
+        for (let i = 0; i < subCount; i++) {
+            const team = Math.random() < 0.5 ? 'home' : 'away';
+            const teamData = team === 'home' ? home : away;
+            const p = teamData.names[Math.floor(Math.random() * teamData.names.length)];
+            const minute = 55 + Math.floor(Math.random() * 35);
+            events.push({ minute, team, player: p, type: 'sub', text: `${team==='home'?home.name:away.name} 换人调整` });
+        }
+
+        allGoals.forEach(g => {
+            events.push({ minute: g.minute, team: g.team, player: g.player, type: 'goal',
+                text: g.team === 'home' ? `⚽ GOAL! ${home.name} ${g.player} 进球！` : `⚽ GOAL! ${away.name} ${g.player} 进球！` });
+        });
+
+        events.sort((a, b) => a.minute - b.minute);
+        return events;
+    }
+
+    function getScorerWeight(pos, rating) {
+        const posWeight = { 'ST': 3.0, 'LW': 2.5, 'RW': 2.5, 'CAM': 2.0, 'CM': 1.2, 'LM': 1.5, 'RM': 1.5, 'CDM': 0.5, 'CB': 0.4, 'LB': 0.3, 'RB': 0.3, 'LWB': 0.3, 'RWB': 0.3, 'GK': 0.05 };
+        return (posWeight[pos] || 1.0) * (rating / 72);
+    }
+
+    function weightedRandom(items) {
+        const total = items.reduce((s, it) => s + it.weight, 0);
+        let r = Math.random() * total;
+        for (const it of items) { r -= it.weight; if (r <= 0) return it; }
+        return items[0];
+    }
+
+    function randomMinute(type, existing) {
+        let minute;
+        do {
+            if (type === 'goal') minute = 1 + Math.floor(Math.random() * 95);
+            else if (type === 'yellow') minute = 10 + Math.floor(Math.random() * 80);
+            else minute = 20 + Math.floor(Math.random() * 70);
+        } while (existing.some(e => Math.abs(e.minute - minute) < 2));
+        return minute;
+    }
+
+    function calculateStats(home, away, xg) {
+        const homePossession = 50 + (home.mid - away.mid) * 0.8;
+        const possession = Math.max(25, Math.min(75, homePossession));
+        const aerialHome = Math.max(30, Math.min(70,
+            50 + (home.phys.aerial - away.phys.aerial) * 14 + (home.phys.duel - away.phys.duel) * 6));
+        const homeShots = Math.round(xg.home * (8 + Math.random() * 6));
+        const awayShots = Math.round(xg.away * (8 + Math.random() * 6));
+        const homeOnTarget = Math.round(homeShots * (0.35 + (home.att - 72) / 200));
+        const awayOnTarget = Math.round(awayShots * (0.35 + (away.att - 72) / 200));
+        const homeCorners = Math.round(3 + xg.home * 2 + Math.random() * 4);
+        const awayCorners = Math.round(3 + xg.away * 2 + Math.random() * 4);
+        const homeFouls = Math.round(8 + Math.random() * 8 - (home.def - 72) / 10);
+        const awayFouls = Math.round(8 + Math.random() * 8 - (away.def - 72) / 10);
+        return {
+            possession, homeShots, awayShots,
+            homeOnTarget, awayOnTarget,
+            homeCorners, awayCorners,
+            aerialHome,
+            homeFouls: Math.max(3, homeFouls), awayFouls: Math.max(3, awayFouls)
+        };
+    }
+
+    function monteCarloSim(home, away, iterations = 10000) {
+        let homeWins = 0, draws = 0, awayWins = 0;
+        let homeXgTotal = 0, awayXgTotal = 0;
+        for (let i = 0; i < iterations; i++) {
+            const r = simulateMatch(home, away);
+            if (r.homeGoals > r.awayGoals) homeWins++;
+            else if (r.homeGoals < r.awayGoals) awayWins++;
+            else draws++;
+            homeXgTotal += r.homeXG;
+            awayXgTotal += r.awayXG;
+        }
+        return {
+            homeWinProb: homeWins / iterations * 100,
+            drawProb: draws / iterations * 100,
+            awayWinProb: awayWins / iterations * 100,
+            avgHomeXG: homeXgTotal / iterations,
+            avgAwayXG: awayXgTotal / iterations
+        };
+    }
+
+    function renderPhysCompare(home, away) {
+        const card = t => {
+            const p = t.phys;
+            const rows = [
+                ['平均身高', p.avgH ? p.avgH.toFixed(1) + ' cm' : '未录入'],
+                ['平均体重', p.avgW ? p.avgW.toFixed(1) + ' kg' : '未录入'],
+                ['平均 BMI', p.bmi ? p.bmi.toFixed(1) : '—'],
+                ['惯用脚 左 / 右 / 双', `${p.left} / ${p.right} / ${p.both}`],
+                ['逆足边锋', `${p.inverted} 人`],
+                ['身高资料', `${p.count} / 11 人`]
+            ];
+            return `<div class="phys-card"><h4>${escapeHtml(t.name)}</h4>` +
+                rows.map(([k, v]) => `<div class="phys-row"><span>${k}</span><b>${v}</b></div>`).join('') +
+                `</div>`;
+        };
+        document.getElementById('physCompare').innerHTML =
+            `<div class="phys-cards">${card(home)}${card(away)}</div>`;
+    }
+
+    function generateAnalysis(home, away, result, mc) {
+        const homeWin = result.homeGoals > result.awayGoals;
+        const awayWin = result.awayGoals > result.homeGoals;
+        const draw = result.homeGoals === result.awayGoals;
+
+        let text = '';
+        if (homeWin) text += `🏆 <b>${home.name}</b> 主场 ${result.homeGoals}-${result.awayGoals} 战胜 <b>${away.name}</b>。`;
+        else if (awayWin) text += `🏆 <b>${away.name}</b> 客场 ${result.awayGoals}-${result.homeGoals} 击败 <b>${home.name}</b>。`;
+        else text += `🤝 双方 ${result.homeGoals}-${result.awayGoals} 握手言和。`;
+
+        const overallDiff = home.overall - away.overall;
+        if (Math.abs(overallDiff) > 5) {
+            if (overallDiff > 0 && homeWin) {
+                text += `<br>💪 两队实力对比：主队 ${home.overall.toFixed(1)} vs 客队 ${away.overall.toFixed(1)}，主队整体占优，结果符合预期。`;
+            } else if (overallDiff < 0 && awayWin) {
+                text += `<br>🔥 ${away.name} 实力虽处下风（${away.overall.toFixed(1)} vs ${home.overall.toFixed(1)}），但凭借高效反击完成爆冷！`;
+            } else {
+                text += `<br>⚡ 尽管实力对比为 ${home.overall.toFixed(1)} vs ${away.overall.toFixed(1)}，但足球是圆的，临场发挥决定了结果。`;
+            }
+        } else {
+            text += `<br>⚖️ 两队整体实力接近（${home.overall.toFixed(1)} vs ${away.overall.toFixed(1)}），比赛十分胶着。`;
+        }
+
+        text += `<br>📐 阵型对决：${home.formation} vs ${away.formation}。`;
+        if (home.style.attack > away.style.attack && home.style.def < away.style.def) {
+            text += ` 主队偏进攻，客队偏防守，攻防博弈是本场看点。`;
+        } else if (home.style.def > away.style.attack) {
+            text += ` 主队防线稳固，客队需要寻找突破口。`;
+        }
+
+        // —— 身体条件解读 ——
+        const hH = home.phys.avgH, aH = away.phys.avgH;
+        if (hH && aH && Math.abs(hH - aH) >= 1.5) {
+            const taller = hH > aH ? home : away;
+            text += `<br>📏 平均身高：${home.name} ${hH.toFixed(1)} cm vs ${away.name} ${aH.toFixed(1)} cm，<b>${taller.name}</b> 在定位球与空中对抗中更占便宜。`;
+        }
+        if (home.phys.footKnown >= 3 || away.phys.footKnown >= 3) {
+            const inv = home.phys.inverted + away.phys.inverted;
+            text += `<br>🦶 惯用脚：${home.name} 左 ${home.phys.left} / 右 ${home.phys.right}，${away.name} 左 ${away.phys.left} / 右 ${away.phys.right}`;
+            text += inv > 0
+                ? `；两队共有 ${inv} 名逆足边锋，内切射门的比重会上升。`
+                : '；双方边路都以顺足传中为主。';
+        }
+
+        if (result.homeXG > result.awayXG * 1.5) {
+            text += `<br>📊 主队 xG（${result.homeXG.toFixed(2)}）远超客队（${result.awayXG.toFixed(2)}），占据绝对主动。`;
+        } else if (result.awayXG > result.homeXG * 1.5) {
+            text += `<br>📊 客队 xG（${result.awayXG.toFixed(2)}）远超主队（${result.homeXG.toFixed(2)}），掌控比赛节奏。`;
+        } else {
+            text += `<br>📊 双方 xG 接近（主 ${result.homeXG.toFixed(2)} vs 客 ${result.awayXG.toFixed(2)}），势均力敌。`;
+        }
+
+        const homeBest = home.ratings.indexOf(Math.max(...home.ratings));
+        const awayBest = away.ratings.indexOf(Math.max(...away.ratings));
+        text += `<br>⭐ 全场最佳：主队 <b>${home.names[homeBest]}</b>（${home.posList[homeBest]}）、客队 <b>${away.names[awayBest]}</b>（${away.posList[awayBest]}）。`;
+
+        const maxProb = Math.max(mc.homeWinProb, mc.drawProb, mc.awayWinProb);
+        if (maxProb > 50) {
+            const pick = mc.homeWinProb > mc.awayWinProb ? (mc.homeWinProb > mc.drawProb ? `${home.name}胜` : '平局') : (mc.awayWinProb > mc.drawProb ? `${away.name}胜` : '平局');
+            text += `<br><br>🎯 <b>赛前预测置信度</b>：${maxProb.toFixed(1)}%（预测${pick}）。`;
+        } else {
+            text += `<br><br>🎯 <b>赛前预测</b>：三选一概率接近，属于五五开的比赛。`;
+        }
+
+        return text;
+    }
+
+    function runSimulation() {
+        const home = getTeamData('left');
+        const away = getTeamData('right');
+        const result = simulateMatch(home, away);
+        const mc = monteCarloSim(home, away, 10000);
+
+        document.getElementById('resTeamNameLeft').textContent = home.name;
+        document.getElementById('resTeamNameRight').textContent = away.name;
+        document.getElementById('resScoreLeft').textContent = result.homeGoals;
+        document.getElementById('resScoreRight').textContent = result.awayGoals;
+        document.getElementById('resXgLeft').textContent = `xG: ${result.homeXG.toFixed(2)}`;
+        document.getElementById('resXgRight').textContent = `xG: ${result.awayXG.toFixed(2)}`;
+
+        const probBars = document.getElementById('probBars');
+        probBars.innerHTML = `
+            <div class="prob-row">
+                <span class="prob-label">${home.name}胜</span>
+                <div class="prob-track"><div class="prob-fill" style="width:${mc.homeWinProb}%; background: linear-gradient(90deg, #4facfe, #00f2fe);"></div></div>
+                <span class="prob-value">${mc.homeWinProb.toFixed(1)}%</span>
+            </div>
+            <div class="prob-row">
+                <span class="prob-label">平局</span>
+                <div class="prob-track"><div class="prob-fill" style="width:${mc.drawProb}%; background: linear-gradient(90deg, #a8c0ff, #3f2b96);"></div></div>
+                <span class="prob-value">${mc.drawProb.toFixed(1)}%</span>
+            </div>
+            <div class="prob-row">
+                <span class="prob-label">${away.name}胜</span>
+                <div class="prob-track"><div class="prob-fill" style="width:${mc.awayWinProb}%; background: linear-gradient(90deg, #f093fb, #f5576c);"></div></div>
+                <span class="prob-value">${mc.awayWinProb.toFixed(1)}%</span>
+            </div>
+        `;
+
+        const s = result.stats;
+        const homePoss = s.possession;
+        const awayPoss = 100 - s.possession;
+        document.getElementById('resultStats').innerHTML = `
+            <div class="stat-bar-container">
+                <span class="stat-bar-label">控球</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill home" style="width:${homePoss}%; float:right;"></div></div>
+                <span class="stat-bar-pct">${homePoss.toFixed(0)}%</span>
+                <span class="stat-bar-pct" style="text-align:left;">${awayPoss.toFixed(0)}%</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill away" style="width:${awayPoss}%;"></div></div>
+            </div>
+            <div class="stat-bar-container">
+                <span class="stat-bar-label">争顶</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill home" style="width:${s.aerialHome}%; float:right;"></div></div>
+                <span class="stat-bar-pct">${s.aerialHome.toFixed(0)}%</span>
+                <span class="stat-bar-pct" style="text-align:left;">${(100 - s.aerialHome).toFixed(0)}%</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill away" style="width:${100 - s.aerialHome}%;"></div></div>
+            </div>
+            <div class="stat-bar-container">
+                <span class="stat-bar-label">射门</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill home" style="width:${Math.min(100, s.homeShots*5)}%; float:right;"></div></div>
+                <span class="stat-bar-pct">${s.homeShots}</span>
+                <span class="stat-bar-pct" style="text-align:left;">${s.awayShots}</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill away" style="width:${Math.min(100, s.awayShots*5)}%;"></div></div>
+            </div>
+            <div class="stat-bar-container">
+                <span class="stat-bar-label">射正</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill home" style="width:${Math.min(100, s.homeOnTarget*10)}%; float:right;"></div></div>
+                <span class="stat-bar-pct">${s.homeOnTarget}</span>
+                <span class="stat-bar-pct" style="text-align:left;">${s.awayOnTarget}</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill away" style="width:${Math.min(100, s.awayOnTarget*10)}%;"></div></div>
+            </div>
+            <div class="stat-bar-container">
+                <span class="stat-bar-label">角球</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill home" style="width:${Math.min(100, s.homeCorners*12)}%; float:right;"></div></div>
+                <span class="stat-bar-pct">${s.homeCorners}</span>
+                <span class="stat-bar-pct" style="text-align:left;">${s.awayCorners}</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill away" style="width:${Math.min(100, s.awayCorners*12)}%;"></div></div>
+            </div>
+            <div class="stat-bar-container">
+                <span class="stat-bar-label">犯规</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill home" style="width:${Math.min(100, s.homeFouls*6)}%; float:right;"></div></div>
+                <span class="stat-bar-pct">${s.homeFouls}</span>
+                <span class="stat-bar-pct" style="text-align:left;">${s.awayFouls}</span>
+                <div class="stat-bar-track"><div class="stat-bar-fill away" style="width:${Math.min(100, s.awayFouls*6)}%;"></div></div>
+            </div>
+        `;
+
+        renderPhysCompare(home, away);
+
+        const timelineEl = document.getElementById('timeline');
+        let html = '';
+        if (result.events.length === 0) {
+            html = '<div class="timeline-item"><span class="timeline-text">本场比赛没有太多精彩事件...</span></div>';
+        } else {
+            result.events.forEach(ev => {
+                const icon = ev.type === 'goal' ? '⚽' : ev.type === 'yellow' ? '🟨' : ev.type === 'red' ? '🟥' : '🔄';
+                const teamColor = ev.team === 'home' ? '#4facfe' : '#f5576c';
+                html += `<div class="timeline-item ${ev.type}">
+                    <span class="timeline-time">${String(ev.minute).padStart(2,'0')}'</span>
+                    <span class="timeline-icon">${icon}</span>
+                    <span class="timeline-text" style="color:${teamColor}">${ev.text}</span>
+                </div>`;
+            });
+        }
+        timelineEl.innerHTML = html;
+
+        document.getElementById('predictionText').innerHTML = generateAnalysis(home, away, result, mc);
+        document.getElementById('resultPanel').classList.add('show');
+        document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function resetAll() {
+        initDefaultNames();
+        playerRatings.clear();
+        subData.clear();
+        playerProfiles.clear();
+        try { localStorage.removeItem(STORE_KEY); } catch (e) { /* 忽略 */ }
+        renderPlayers('left');
+        renderPlayers('right');
+        renderSubs('left');
+        renderSubs('right');
+        document.getElementById('coachLeft').value = '教练';
+        document.getElementById('coachRight').value = '教练';
+        document.getElementById('resultPanel').classList.remove('show');
+    }
+
+    function bindProfileUI() {
+        document.getElementById('profileBtnLeft').addEventListener('click', () => openProfileModal('left'));
+        document.getElementById('profileBtnRight').addEventListener('click', () => openProfileModal('right'));
+        document.getElementById('profileClose').addEventListener('click', closeProfileModal);
+        document.getElementById('profileModal').addEventListener('click', e => {
+            if (e.target.id === 'profileModal') closeProfileModal();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeProfileModal();
+        });
+
+        document.getElementById('uploadCsvBtn').addEventListener('click', () => {
+            document.getElementById('csvFileInput').click();
+        });
+        document.getElementById('csvFileInput').addEventListener('change', e => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            readTextFile(file, text => importTable(parseDelimited(text)));
+            e.target.value = '';
+        });
+        document.getElementById('downloadTplBtn').addEventListener('click', downloadTemplate);
+        document.getElementById('pasteToggleBtn').addEventListener('click', () => {
+            const area = document.getElementById('pasteArea');
+            area.hidden = !area.hidden;
+            if (!area.hidden) document.getElementById('pasteText').focus();
+        });
+        document.getElementById('pasteConfirmBtn').addEventListener('click', () => {
+            const text = document.getElementById('pasteText').value;
+            if (!text.trim()) { showMsg('请先粘贴内容，再点导入。', true); return; }
+            importTable(parseDelimited(text));
+        });
+        document.getElementById('demoBtn').addEventListener('click', fillDemo);
+        document.getElementById('clearPhysBtn').addEventListener('click', () => {
+            rosterEntries(modalSide).forEach(e => {
+                const p = getProfile(e.key);
+                p.height = '';
+                p.weight = '';
+                p.foot = '';
+                refreshChip(e.key);
+            });
+            buildProfileTable();
+            showMsg('已清空本队身体数据。');
+        });
+
+        document.addEventListener('input', scheduleSave);
+        document.addEventListener('change', scheduleSave);
+    }
+
+    function init() {
+        populateFormations();
+        initDefaultNames();
+        loadState();
+        initTeam('left');
+        initTeam('right');
+        renderSubs('left');
+        renderSubs('right');
+        bindProfileUI();
+        document.getElementById('simBtn').addEventListener('click', runSimulation);
+        document.getElementById('resetBtn').addEventListener('click', resetAll);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
